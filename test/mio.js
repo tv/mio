@@ -532,18 +532,15 @@ describe('Model', function() {
       model.validate();
     });
 
-    it('returns error or null', function(done) {
+    it('returns boolean', function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
       var model = Model.create({ id: 1 });
       var valid = model.validate();
-      should(valid).equal(null);
-      Model.validators.push(function(model, failed) {
-        failed.push({
-          attribute: 'id',
-          message: 'not a valid id'
-        });
+      should(valid).equal(true);
+      Model.validators.push(function(model) {
+        model.error('failed');
       });
-      model.validate().should.be.instanceOf(Error);
+      model.validate().should.equal(false);
       done();
     });
 

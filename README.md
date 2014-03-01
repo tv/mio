@@ -90,6 +90,13 @@ User.attr('created_at', {
 });
 ```
 
+#### options
+
+`default` default value or function returning value.
+`filtered` if true filters attribute from `JSON.stringify`
+`get` getter function returning attribute value
+`primary` use this attribute as primary key/id (must be unique)
+
 ### Model.use(fn)
 
 Use a plugin function that extends the model. Function is called with `Model` as
@@ -261,10 +268,10 @@ user.remove(function(err) {
 
 ### Model#isNew()
 
+### Model#validate()
 ### Model#isValid()
 
-Runs validators, repopulates model.errors array with any validation errors
-encountered, and returns a boolean of whether the model validated.
+Runs validators and returns a boolean of whether the model has errors.
 
 ### Model#isDirty()
 
@@ -276,9 +283,9 @@ Return attributes changed since last save.
 
 ### Model#has(attribute)
 
-### Model#error(message, attribute)
+### Model#error(message, extend)
 
-Generate and add error to `model.errors` array, and emit "error" event.
+Create error, add to `model.errors` array, and emit "error" event.
 
 ### Model#errors
 
