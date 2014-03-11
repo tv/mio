@@ -28,8 +28,7 @@
   },
   "main": "./lib/mio.js",
   "scripts": {
-    "prepublish": "./node_modules/jscoverage/bin/jscoverage lib lib-cov",
-    "test": "node ./lib/test-runner.js"
+    "test": "./node_modules/mocha/bin/mocha test --recursive --reporter spec"
   },
   "license": "MIT"
 }
