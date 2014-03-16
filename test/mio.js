@@ -79,14 +79,14 @@ describe('Model', function() {
     var user = new User;
 
     // Exists
-    should.exist(user.extras);
+    expect(user.extras).to.eql({});
 
     // Is writable
     user.extras.stuff = "things";
-    user.extras.stuff.should.equal("things");  
+    expect(user.extras.stuff).to.equal("things");
 
     // Is not enumerable
-    Object.keys(user).indexOf('extras').should.equal(-1);
+    expect(Object.keys(user).indexOf('extras')).to.equal(-1);
   });
 
   it('wraps callback methods to return thunks', function(done) {
@@ -209,11 +209,19 @@ describe('Model', function() {
       });
     });
 
-    it("uses adapter's find method", function(done) {
+    it("calls each store's find method", function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
-      Model.adapter.find = function(query, cb) {
-        cb(null, { id: 1 });
-      };
+
+      Model.stores.push({
+        find: function(query, cb) {
+          cb();
+        }
+      }, {
+        find: function(query, cb) {
+          cb(null, new Model({ id: 1 }));
+        }
+      });
+
       Model.find(1, function(err, model) {
         if (err) return done(err);
         should.exist(model);
@@ -235,13 +243,18 @@ describe('Model', function() {
 
     it('emits "after find" event', function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
+
       Model.on('after find', function(model) {
         should.exist(model);
         done();
       });
-      Model.adapter.find = function(query, cb) {
-        cb(null, { id: 1 });
-      };
+
+      Model.stores.push({
+        find: function(query, cb) {
+          cb(null, new Model({ id: 1 }));
+        }
+      });
+
       Model.find(1, function(err, model) {
         if (err) return done(err);
       });
@@ -249,9 +262,13 @@ describe('Model', function() {
 
     it('passes error from adapter to callback', function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
-      Model.adapter.find = function(query, cb) {
-        cb(new Error('test'));
-      };
+
+      Model.stores.push({
+        find: function(query, cb) {
+          cb(new Error('test'));
+        }
+      });
+
       Model.find(1, function(err, model) {
         should.exist(err);
         err.should.have.property('message', 'test')
@@ -272,11 +289,19 @@ describe('Model', function() {
       });
     });
 
-    it("uses adapter's findAll method", function(done) {
+    it("calls each store's findAll method", function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
-      Model.adapter.findAll = function(query, cb) {
-        cb(null, [{ id: 1 }]);
-      };
+
+      Model.stores.push({
+        findAll: function(query, cb) {
+          cb();
+        }
+      }, {
+        findAll: function(query, cb) {
+          cb(null, [new Model({ id: 1 })]);
+        },
+      });
+
       Model.findAll(function(err, collection) {
         if (err) return done(err);
         should.exist(collection);
@@ -310,9 +335,13 @@ describe('Model', function() {
 
     it('passes error from adapter to callback', function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
-      Model.adapter.findAll = function(query, cb) {
-        cb(new Error('test'));
-      };
+
+      Model.stores.push({
+        findAll: function(query, cb) {
+          cb(new Error('test'));
+        }
+      });
+
       Model.findAll(function(err, collection) {
         should.exist(err);
         err.should.have.property('message', 'test')
@@ -333,11 +362,19 @@ describe('Model', function() {
       });
     });
 
-    it("uses adapter's count method", function(done) {
+    it("calls each store's count method", function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
-      Model.adapter.count = function(query, cb) {
-        cb(null, 3);
-      };
+
+      Model.stores.push({
+        count: function(query, cb) {
+          cb();
+        }
+      }, {
+        count: function(query, cb) {
+          cb(null, 3);
+        }
+      });
+
       Model.count(function(err, count) {
         if (err) return done(err);
         should.exist(count);
@@ -370,9 +407,17 @@ describe('Model', function() {
 
     it('passes error from adapter to callback', function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
-      Model.adapter.count = function(query, cb) {
-        cb(new Error('test'));
-      };
+
+      Model.stores.push({
+        count: function(query, cb) {
+          cb();
+        }
+      }, {
+        count: function(query, cb) {
+          cb(new Error('test'));
+        }
+      });
+
       Model.count(function(err, collection) {
         should.exist(err);
         err.should.have.property('message', 'test')
@@ -392,14 +437,29 @@ describe('Model', function() {
       });
     });
 
-    it("uses adapter's removeAll method", function(done) {
+    it("calls all stores' removeAll method", function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
       var model = Model.create({ id: 1 });
-      Model.adapter.removeAll = function(query, cb) {
-        cb();
-      };
+
+      model.extras.idA = 2;
+      model.extras.idB = 3;
+
+      Model.stores.push({
+        removeAll: function(query, cb) {
+          model.extras.idA = null;
+          cb();
+        }
+      }, {
+        removeAll: function(query, cb) {
+          model.extras.idB = null;
+          cb();
+        }
+      });
+
       Model.removeAll(function(err) {
         if (err) return done(err);
+        should.not.exist(model.extras.idA);
+        should.not.exist(model.extras.idB);
         done();
       });
     });
@@ -427,10 +487,13 @@ describe('Model', function() {
 
     it('passes error from adapter to callback', function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
-      var model = Model.create({ id: 1 });
-      Model.adapter.removeAll = function(query, cb) {
-        cb(new Error('test'));
-      };
+
+      Model.stores.push({
+        removeAll: function(query, cb) {
+          cb(new Error('test'));
+        }
+      });
+
       Model.removeAll(function(err) {
         should.exist(err);
         err.should.have.property('message', 'test')
@@ -587,16 +650,25 @@ describe('Model', function() {
       });
     });
 
-    it("uses adapter's save method", function(done) {
+    it("calls each store's save method", function(done) {
       var Model = mio.createModel('user')
         .attr('id', { primary: true, required: true })
         .use(function() {
-          this.adapter.save = function(changed, cb) {
-            should(changed).have.property('id', 1);
-            cb(null, { id: 1 });
-          };
+          this.stores.push({
+            save: function(changed, cb) {
+              should(changed).have.property('id', 1);
+              cb();
+            }
+          }, {
+            save: function(changed, cb) {
+              should(changed).have.property('id', 1);
+              cb();
+            }
+          });
         });
+
       var model = Model.create({ id: 1 });
+
       model.save(function(err) {
         should.not.exist(err);
         model.id.should.equal(1);
@@ -608,11 +680,15 @@ describe('Model', function() {
       var Model = mio.createModel('user')
         .attr('id', { primary: true })
         .use(function() {
-          this.adapter.save = function(changed, cb) {
-            cb(new Error("test"));
-          };
+          this.stores.push({
+            save: function(changed, cb) {
+              cb(new Error("test"));
+            }
+          });
         });
+
       var model = Model.create();
+
       model.save(function(err) {
         should.exist(err);
         err.message.should.equal('test');
@@ -647,24 +723,35 @@ describe('Model', function() {
 
     it('executes callback immediately if not changed', function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
-      Model.adapter.save = function(changed, cb) {
-        should.not.exist(changed);
-        should.not.exist(cb);
-      };
+
+      Model.stores.push({
+        save: function(changed, cb) {
+          should.not.exist(changed);
+          should.not.exist(cb);
+        }
+      });
+
       var model = Model.create({ id: 1 });
+
       model.dirtyAttributes.length = 0;
       model.save(done);
     });
   });
 
   describe('#remove()', function() {
-    it("uses adapter's remove method", function(done) {
+    it("calls each store's remove method", function(done) {
       var Model = mio.createModel('user')
         .attr('id', { primary: true, required: true })
         .use(function() {
-          this.adapter.remove = function(cb) {
-            cb();
-          };
+          this.stores.push({
+            remove: function(cb) {
+              cb();
+            }
+          }, {
+            remove: function(cb) {
+              cb();
+            }
+          });
         });
       var model = Model.create({ id: 1 });
       model.remove(function(err) {
@@ -678,9 +765,11 @@ describe('Model', function() {
       var Model = mio.createModel('user')
         .attr('id', { primary: true, required: true })
         .use(function() {
-          this.adapter.remove = function(cb) {
-            cb(new Error("test"));
-          };
+          this.stores.push({
+            remove: function(cb) {
+              cb(new Error('test'));
+            }
+          });
         });
       var model = Model.create({ id: 1 });
       model.remove(function(err) {
