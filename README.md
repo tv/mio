@@ -93,7 +93,7 @@ User.attr('created_at', {
 #### options
 
 `default` default value or function returning value.
-`filtered` if true filters attribute from `JSON.stringify`
+`filtered` if true prevents attribute from being enumerated
 `get` getter function returning attribute value
 `primary` use this attribute as primary key/id (must be unique)
 
@@ -181,73 +181,6 @@ User.removeAll({
 });
 ```
 
-### Model.hasMany(anotherModel, options)
-
-Define a "has many" relationship.
-
-```javascript
-User.hasMany(Post, {
-  as: 'posts',
-  foreignKey: 'user_id'
-});
-
-user.posts.all(function(err, posts) {
-  // ...
-});
-
-user.posts.create(function(body, function(err, post) {
-  // ...
-});
-```
-
-Specify a model using `params.through` to relate the other two models:
-
-```javascript
-Post.hasMany(Tag, {
-  as: 'tags',
-  through: PostTag, // model with "tag_id" and "post_id" properties
-  throughKey: 'tag_id',
-  foreignKey: 'post_id'
-});
-```
-
-### Model.belongsTo(anotherModel, options)
-
-Define a "belongs to" relationship.
-
-```javascript
-Post.belongsTo(User, {
-  as: 'author',
-  foreignKey: 'user_id'
-});
-
-post.author.get(function(err, user) {
-  // ...
-});
-```
-
-### Model.hasOne(anotherModel, options)
-
-Define a "has one" relationship.
-
-```javascript
-User.hasOne(Subscription, {
-  as: 'subscription',
-  foreignKey: 'subscription_id'
-});
-```
-
-Specify a model using `params.through` to relate the other two models:
-
-```javascript
-User.hasOne(Group, {
-  as: 'group',
-  through: Membership,
-  throughKey: 'group_id',
-  foreignKey: 'user_id'
-});
-```
-
 ### Model#save(callback)
 
 ```javascript
@@ -294,108 +227,6 @@ Array of validation or other errors the model has encountered.
 ### Model#extras
 
 A mutable object for saving extra information pertaining to the model instance.
-
-### Model#[relation]
-
-Query methods specific to `relation`, where `relation` is the `options.as`
-parameter defined with `Model.hasMany()`, `.belongsTo()`, or `.hasOne()`.
-
-```javascript
-User.hasMany(Post, { as: 'posts', foreignKey: 'user_id' });
-
-user.posts.all(function(err, posts) {
-  // ...
-});
-```
-
-### Model#[relation].add(model[, ...], callback)
-
-```javascript
-// Add post instance(s)
-user.post.add(post1, post2, function(err) {});
-
-// Add array of post instances
-user.post.add([post1, post2], function(err) {});
-
-// Add posts by post id
-user.post.add(1, 3, function(err) {});
-```
-
-### Model#[relation].all([query, ]callback)
-
-```javascript
-user.post.all({
-  created_at: '2013-10-31'
-},
-function(err, collection) {
-  console.log(collection);
-  // => [post1, post2, post3, ...]
-});
-```
-
-### Model#[relation].count([query, ]callback)
-
-```javascript
-user.post.count({
-  created_at: '2013-10-31'
-},
-function(err, count) {
-  console.log(count);
-  // => 64
-});
-```
-
-### Model#[relation].create([body, ]callback)
-
-```javascript
-// Create and save related post from attributes
-user.post.create({
-  title: 'Hello World',
-  content: 'My first post.',
-},
-function(err, post) {
-  // ...
-});
-
-// Create multiple related posts by padding multiple attributes objects.
-user.post.create(
-  { title: 'Post 1' },
-  { title: 'Post 2' },
-  function(err, post1, post2) {
-    // ...
-  }
-);
-```
-
-### Model#[relation].get([query, ]callback)
-
-```javascript
-post.author.get(function(err, user) {
-  // ...
-});
-```
-
-### Model#[relation].has(model[, ...], callback)
-
-```javascript
-user.post.has(post, function(err, isRelated) {
-  console.log(isRelated);
-  // => true
-});
-```
-
-### Model#[relation].remove(model[, ...], callback)
-
-```javascript
-// Remove post instance(s)
-user.post.remove(post1, post2, function(err) {});
-
-// Remove array of post instances
-user.post.remove([post1, post2], function(err) {});
-
-// Remove posts by post id
-user.post.remove(1, 3, function(err) {});
-```
 
 ### Events
 

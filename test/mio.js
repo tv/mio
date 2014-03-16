@@ -1,11 +1,12 @@
 var mio = process.env.JSCOV ? require('../lib-cov/mio') : require('../lib/mio');
+var expect = require('expect.js');
 var should = require('should');
 
 describe('mio', function() {
   describe('.createModel()', function() {
     it('creates new models', function() {
       var Model = mio.createModel('user');
-      Model.type.should.equal('User');
+      expect(Model.type).to.equal('User');
     });
   });
 });
@@ -13,8 +14,8 @@ describe('mio', function() {
 describe('Model', function() {
   it('inherits from EventEmitter', function() {
     var Model = mio.createModel('user');
-    Model.should.have.property('emit');
-    Model.should.have.property('on');
+    expect(Model).to.have.property('emit');
+    expect(Model).to.have.property('on');
   });
 
   it('emits "initializing" event', function(done) {
@@ -31,8 +32,8 @@ describe('Model', function() {
   it('emits "initialized" event', function(done) {
     var Model = mio.createModel('user')
       .on('initialized', function(model) {
-        should.exist(model);
-        model.should.have.property('constructor', Model);
+        expect(model).to.be.an('object');
+        expect(model).to.have.property('constructor', Model);
         done();
       });
     new Model();
@@ -43,11 +44,11 @@ describe('Model', function() {
       .attr('id', { primary: true })
       .attr('name')
       .on('change', function(model, name, value, prev) {
-        should.exist(model);
-        model.should.have.property('constructor', Model);
-        name.should.equal('name');
-        value.should.equal('alex');
-        should.equal(prev, undefined);
+        expect(model).to.be.an('object');
+        expect(model).to.have.property('constructor', Model);
+        expect(name).to.equal('name');
+        expect(value).to.equal('alex');
+        expect(prev).to.equal(null);
         done();
       });
     var model = new Model();
@@ -68,8 +69,8 @@ describe('Model', function() {
       }
     });
     var model = new Model({ id: 1 });
-    model.active.should.equal(true);
-    model.created_at.should.be.instanceOf(Date);
+    expect(model.active).to.equal(true);
+    expect(model.created_at).to.be.a(Date);
   });
 
 
@@ -89,23 +90,22 @@ describe('Model', function() {
   });
 
   it('wraps callback methods to return thunks', function(done) {
-    var User = mio.createModel('user', { thunks: true });
-    User.attr('id', { primary: true });
-    var Post = mio.createModel('post', { thunks: true });
-    Post.attr('id', { primary: true }).attr('user_id');
-    User.hasMany(Post, {
-      as: 'posts',
-      foreignKey: 'user_id'
-    });
+    var User = mio.createModel('user', {
+      thunks: true
+    })
+    .attr('id', { primary: true });
+
+    var Post = mio.createModel('post', {
+      thunks: true
+    })
+    .attr('id', { primary: true }).attr('user_id');
+
     var user = new User({ id: 1 });
     var thunk = user.save();
     should.exist(thunk);
     thunk.should.have.type('function');
     thunk(function(err) {
       if (err) return done(err);
-      var thunk = user.posts.create();
-      should.exist(thunk);
-      thunk.should.have.type('function');
       done();
     });
   });
@@ -164,6 +164,24 @@ describe('Model', function() {
         this.test = 1;
       });
       Model.should.have.property('test', 1);
+    });
+  });
+
+  describe('.browser()', function() {
+    it('only runs methods in browser', function() {
+      var Model = mio.createModel('user');
+      Model.browser(function() {
+        this.test = 1;
+      });
+    });
+  });
+
+  describe('.server()', function() {
+    it('only runs methods in node', function() {
+      var Model = mio.createModel('user');
+      Model.server(function() {
+        this.test = 1;
+      });
     });
   });
 
@@ -421,50 +439,6 @@ describe('Model', function() {
     });
   });
 
-  describe('.hasMany()', function() {
-    it('creates relations', function() {
-      var User = mio.createModel('user').attr('id', { primary: true });
-      var Post = mio.createModel('post').attr('id', { primary: true });
-      var params = {
-        as: 'posts',
-        foreignKey: 'user_id'
-      };
-      User.hasMany(Post, params);
-
-      should(User.relations[0].as).equal("posts");
-      should(Post.relations[0].as).equal("posts");
-    });
-  });
-
-  describe('.belongsTo()', function() {
-    it('creates relations', function() {
-      var User = mio.createModel('user').attr('id', { primary: true });
-      var Post = mio.createModel('post').attr('id', { primary: true });
-      var params = {
-        as: 'author',
-        foreignKey: 'user_id'
-      };
-      Post.belongsTo(User, params);
-      should(User.relations[0].as).equal("author");
-      should(Post.relations[0].as).equal("author");
-    });
-  });
-
-  describe('.hasOne()', function() {
-    it('creates relations', function() {
-      var User = mio.createModel('user').attr('id', { primary: true });
-      var Subscription = mio.createModel('subscription').attr('id', { primary: true });
-      var params = {
-        as: 'subscription',
-        throughKey: 'subscription_id',
-        foreignKey: 'user_id',
-      };
-      User.hasOne(Subscription, params);
-      should(User.relations[0].as).equal("subscription");
-      should(Subscription.relations[0].as).equal("subscription");
-    });
-  });
-
   describe('#isNew()', function() {
     it('checks whether primary attribute is set', function() {
       var Model = mio.createModel('user').attr('id', { primary: true });
@@ -521,15 +495,18 @@ describe('Model', function() {
 
   describe('#validate()', function() {
     it('runs Model.validators functions', function(done) {
+      var validated = false;
       var Model = mio.createModel('user')
         .attr('id', { primary: true })
         .use(function() {
           this.validators.push(function() {
-            done();
+            validated = true;
           });
         });
       var model = Model.create({ id: 1 });
       model.validate();
+      validated.should.equal(true);
+      done();
     });
 
     it('returns boolean', function(done) {
@@ -570,9 +547,7 @@ describe('Model', function() {
       var Model = mio.createModel('user')
         .attr('id', { primary: true })
         .use(function() {
-          this.validators.push(function() {
-            return;
-          });
+          this.validators.push(function() {});
         });
       var model = Model.create({ id: 1 });
       model.isValid().should.equal(true);
@@ -618,7 +593,7 @@ describe('Model', function() {
         .use(function() {
           this.adapter.save = function(changed, cb) {
             should(changed).have.property('id', 1);
-            cb();
+            cb(null, { id: 1 });
           };
         });
       var model = Model.create({ id: 1 });
@@ -760,535 +735,6 @@ describe('Model', function() {
         });
       var model = Model.create({ id: 1 });
       model.error('test');
-    });
-  });
-});
-
-describe('Model#[relation]', function() {
-  it('throws error for invalid relation', function() {
-    (function() {
-      var Post = mio.createModel('post').attr('id', { primary: true });
-      var post = new Post({ id: 1 }).relation('tags');
-    }).should.throw('Relation "tags" not defined.');
-  });
-
-  describe('.add()', function() {
-    it('associates many-to-many models', function(done) {
-      var Tag = mio.createModel('tag').attr('id', { primary: true });
-      var Post = mio.createModel('post').attr('id', { primary: true });
-      Post.hasMany(Tag, {
-        as: 'tags',
-        foreignKey: 'post_id',
-        throughKey: 'tag_id'
-      });
-      var post = new Post({id: 1});
-      post.tags.add(new Tag({id: 1}), function(err, tag) {
-        if (err) return done(err);
-        should.exist(tag);
-        tag.id.should.equal(1);
-        done();
-      });
-    });
-
-    it('associates one-to-many models', function(done) {
-      var User = mio.createModel('user').attr('id', { primary: true });
-      var Post = mio.createModel('post')
-        .attr('id', { primary: true })
-        .attr('user_id');
-      User.hasMany(Post, {
-        as: 'posts',
-        foreignKey: 'user_id'
-      });
-      var user = new User({id: 2});
-      var post = new Post({id: 1});
-      user.posts.add(post, function(err, post) {
-        if (err) return done(err);
-        should.exist(post);
-        post.user_id.should.equal(2);
-        done();
-      });
-    });
-
-    it('associates one-to-one models', function(done) {
-      var User = mio.createModel('user').attr('id', { primary: true });
-      var Post = mio.createModel('post')
-        .attr('id', { primary: true })
-        .attr('user_id');
-      Post.belongsTo(User, {
-        as: 'author',
-        foreignKey: 'user_id'
-      });
-      var user = new User({id: 2});
-      var post = new Post({id: 1});
-      post.author.add(user, function(err, user) {
-        if (err) return done(err);
-        should.exist(user);
-        post.user_id.should.equal(2);
-        done();
-      });
-    });
-
-    it('associates array of ids', function(done) {
-      var Tag = mio.createModel('tag').attr('id', { primary: true });
-      var Post = mio.createModel('post').attr('id', { primary: true });
-      Post.hasMany(Tag, {
-        as: 'tags',
-        foreignKey: 'post_id',
-        throughKey: 'tag_id'
-      });
-      Tag.adapter.findAll = function(query, callback) {
-        callback(null, [{ id: 1 }]);
-      };
-      var post = new Post({id: 1});
-      post.tags.add(1, function(err) {
-        if (err) return done(err);
-        done();
-      });
-    });
-
-    it("uses adapter method if provided", function(done) {
-      var Tag = mio.createModel('tag').attr('id', { primary: true });
-      var Post = mio.createModel('post').attr('id', { primary: true });
-      Post.hasMany(Tag, {
-        as: 'tags',
-        foreignKey: 'post_id',
-        throughKey: 'tag_id'
-      });
-      Post.adapter.related = {add: function(relation, related, callback) {
-        related.should.contain(tag);
-        tag.id = 2;
-        callback(null, related);
-      }};
-      var post = new Post({id: 1});
-      var tag = new Tag({id: 1});
-      post.tags.add(tag, function(err, tag) {
-        if (err) return done(err);
-        should.exist(tag);
-        tag.id.should.equal(2);
-        done();
-      });
-    });
-
-    it('passes error to callback', function(done) {
-      var Tag = mio.createModel('tag').attr('id', { primary: true });
-      var Post = mio.createModel('post').attr('id', { primary: true });
-      Post.hasMany(Tag, {
-        as: 'tags',
-        foreignKey: 'post_id',
-        throughKey: 'tag_id'
-      });
-      Tag.adapter.findAll = function(query, callback) {
-        callback(new Error("test"));
-      };
-      var post = new Post({id: 1});
-      post.tags.add(1, function(err) {
-        should.exist(err);
-        err.should.have.property('message', 'test');
-        done();
-      });
-    });
-  });
-
-  describe('.all()', function() {
-    it('throws error if no adapter support', function() {
-      var Tag = mio.createModel('tag').attr('id', { primary: true });
-      var Post = mio.createModel('post').attr('id', { primary: true });
-      Post.hasMany(Tag, {
-        as: 'tags',
-        foreignKey: 'post_id',
-        throughKey: 'tag_id'
-      });
-      var post = new Post({id: 1});
-      (function() {
-        post.tags.all(function() {});
-      }).should.throw("No storage adapter support for this method.");
-    });
-
-    it('finds all related models', function(done) {
-      var Tag = mio.createModel('tag').attr('id', { primary: true });
-      var Post = mio.createModel('post').attr('id', { primary: true });
-      Post.hasMany(Tag, {
-        as: 'tags',
-        foreignKey: 'post_id',
-        throughKey: 'tag_id'
-      });
-      Tag.adapter.related = {findAll: function(relation, query, callback) {
-        should.exist(relation);
-        relation.type.should.equal('has many');
-        callback(null, [{id: 1}]);
-      }};
-      var post = new Post({id: 1});
-      post.tags.all(function(err, tags) {
-        if (err) return done(err);
-        should.exist(tags);
-        should(tags).be.instanceOf(Array);
-        tags.length.should.equal(1);
-        done();
-      });
-    });
-
-    it('finds related models using query', function(done) {
-      var Tag = mio.createModel('tag').attr('id', { primary: true });
-      var Post = mio.createModel('post').attr('id', { primary: true });
-      Post.hasMany(Tag, {
-        as: 'tags',
-        foreignKey: 'post_id',
-        throughKey: 'tag_id'
-      });
-      Tag.adapter.related = {findAll: function(relation, query, callback) {
-        should.exist(relation);
-        relation.should.have.property('type', 'has many');
-        query.should.have.property('id', 1);
-        callback(null, [{id: 1}]);
-      }};
-      var post = new Post({id: 1});
-      post.tags.all({ id: 1 }, function(err, tags) {
-        if (err) return done(err);
-        should.exist(tags);
-        should(tags).be.instanceOf(Array);
-        tags.length.should.equal(1);
-        done();
-      });
-    });
-
-    it('passes error to callback', function(done) {
-      var Tag = mio.createModel('tag').attr('id', { primary: true });
-      var Post = mio.createModel('post').attr('id', { primary: true });
-      Post.hasMany(Tag, {
-        as: 'tags',
-        foreignKey: 'post_id',
-        throughKey: 'tag_id'
-      });
-      Tag.adapter.related = {findAll: function(relation, query, callback) {
-        callback(new Error("test"));
-      }};
-      var post = new Post({id: 1});
-      post.tags.all({ id: 1 }, function(err, tags) {
-        should.exist(err);
-        err.should.have.property('message', 'test');
-        done();
-      });
-    });
-  });
-
-  describe('.count()', function() {
-    it('throws error if no adapter support', function() {
-      var Tag = mio.createModel('tag').attr('id', { primary: true });
-      var Post = mio.createModel('post').attr('id', { primary: true });
-      Post.hasMany(Tag, {
-        as: 'tags',
-        foreignKey: 'post_id',
-        throughKey: 'tag_id'
-      });
-      var post = new Post({id: 1});
-      (function() {
-        post.tags.count(function() {});
-      }).should.throw("No storage adapter support for this method.");
-    });
-
-    it('counts all related models', function(done) {
-      var Tag = mio.createModel('tag').attr('id', { primary: true });
-      var Post = mio.createModel('post').attr('id', { primary: true });
-      Post.hasMany(Tag, {
-        as: 'tags',
-        foreignKey: 'post_id',
-        throughKey: 'tag_id'
-      });
-      Tag.adapter.related = {count: function(relation, query, callback) {
-        callback(null, 3);
-      }};
-      var post = new Post({id: 1});
-      post.tags.count(function(err, count) {
-        if (err) return done(err);
-        should.exist(count);
-        count.should.equal(3);
-        done();
-      });
-    });
-
-    it('counts related models using query', function(done ) {
-      var Tag = mio.createModel('tag').attr('id', { primary: true });
-      var Post = mio.createModel('post').attr('id', { primary: true });
-      Post.hasMany(Tag, {
-        as: 'tags',
-        foreignKey: 'post_id',
-        throughKey: 'tag_id'
-      });
-      Tag.adapter.related = {count: function(relation, query, callback) {
-        callback(null, 3);
-      }};
-      var post = new Post({id: 1});
-      post.tags.count({ id: 1 }, function(err, count) {
-        if (err) return done(err);
-        should.exist(count);
-        count.should.equal(3);
-        done();
-      });
-    });
-
-    it('passes error to callback', function(done) {
-      var Tag = mio.createModel('tag').attr('id', { primary: true });
-      var Post = mio.createModel('post').attr('id', { primary: true });
-      Post.hasMany(Tag, {
-        as: 'tags',
-        foreignKey: 'post_id',
-        throughKey: 'tag_id'
-      });
-      Tag.adapter.related = {count: function(relation, query, callback) {
-        callback(new Error("test"));
-      }};
-      var post = new Post({id: 1});
-      post.tags.count({ id: 1 }, function(err, count) {
-        should.exist(err);
-        err.should.have.property('message', 'test');
-        done();
-      });
-    });
-  });
-
-  describe('.create()', function() {
-    it('creates and saves related model', function(done) {
-      var User = mio.createModel('user').attr('id', { primary: true });
-      var Post = mio.createModel('post')
-        .attr('id', { primary: true }).attr('user_id');
-      Post.belongsTo(User, {
-        as: 'author',
-        foreignKey: 'user_id'
-      });
-      User.adapter.save = function(changed, callback) {
-        should.exist(changed);
-        should(callback).have.type('function');
-        callback(null, { id: 3 });
-      };
-      Post.adapter.add = function(related, callback) {
-        should(related).be.instanceOf(Array);
-        should(callback).have.type('function');
-        callback();
-      };
-      var post = new Post({id: 1});
-      post.author.create({ name: 'alex' }, function(err, author) {
-        should.not.exist(err);
-        should.exist(author);
-        author.id.should.equal(3);
-        post.user_id.should.equal(3);
-        done();
-      });
-    });
-
-    it("uses adapter's method if provided", function(done) {
-      var User = mio.createModel('user').attr('id', { primary: true });
-      var Post = mio.createModel('post')
-        .attr('id', { primary: true }).attr('user_id');
-      Post.belongsTo(User, {
-        as: 'author',
-        foreignKey: 'user_id'
-      });
-      User.adapter.related = {create: function(relation, attributes, callback) {
-        should.exist(relation);
-        relation.should.have.property('type', 'belongs to');
-        should.exist(attributes);
-        should(callback).have.type('function');
-        this.user_id = 3;
-        callback(null, [new User({ id: 3 })]);
-      }};
-      var post = new Post({id: 1});
-      post.author.create(function(err, author) {
-        should.not.exist(err);
-        should.exist(author);
-        author.id.should.equal(3);
-        post.user_id.should.equal(3);
-        done();
-      });
-    });
-
-    it('passes error to callback', function(done) {
-      var User = mio.createModel('user').attr('id', { primary: true });
-      var Tag = mio.createModel('post').attr('id', { primary: true });
-      User.hasMany(Tag, {
-        as: 'tags',
-        foreignKey: 'post_id',
-        throughKey: 'tag_id'
-      });
-      Tag.adapter.save = function(changed, callback) {
-        callback(new Error("test"));
-      };
-      var user = new User({id: 1});
-      user.tags.create(function(err, tag) {
-        should.exist(err);
-        err.should.have.property('message', "test");
-        done();
-      });
-    });
-  });
-
-  describe('.get()', function() {
-    it('gets related model', function(done) {
-      var User = mio.createModel('user').attr('id', { primary: true });
-      var Post = mio.createModel('post').attr('id', { primary: true });
-      Post.belongsTo(User, {
-        as: 'author',
-        foreignKey: 'user_id'
-      });
-      User.adapter.related = {find: function(relation, query, callback) {
-        should.exist(query);
-        callback(null, {id: 1});
-      }};
-      var post = new Post({id: 1});
-      post.author.get(function(err, user) {
-        if (err) return done(err);
-        should.exist(user);
-        user.id.should.equal(1);
-        done();
-      });
-    });
-
-    it('passes error to callback', function(done) {
-      var User = mio.createModel('user').attr('id', { primary: true });
-      var Post = mio.createModel('post').attr('id', { primary: true });
-      Post.belongsTo(User, {
-        as: 'author',
-        foreignKey: 'user_id'
-      });
-      User.adapter.related = {find: function(relation, query, callback) {
-        callback(new Error("test"));
-      }};
-      var post = new Post({id: 1});
-      post.author.get(function(err, user) {
-        should.exist(err);
-        err.should.have.property('message', "test");
-        done();
-      });
-    });
-  });
-
-  describe('.has()', function() {
-    it('determines whether model is related', function(done) {
-      var Tag = mio.createModel('tag').attr('id', { primary: true });
-      var Post = mio.createModel('post').attr('id', { primary: true });
-      Post.hasMany(Tag, {
-        as: 'tags',
-        foreignKey: 'post_id',
-        throughKey: 'tag_id'
-      });
-      Post.adapter.related = {has: function(relation, related, callback) {
-        should.exist(related);
-        related.id.should.equal(2);
-        callback(null, true);
-      }};
-      var post = new Post({id: 1});
-      var tag = new Tag({id: 2 });
-      post.tags.has(tag, function(err, related) {
-        should.not.exist(err);
-        should.exist(related);
-        related.should.equal(true);
-        done();
-      });
-    });
-
-    it('passes error to callback', function(done) {
-      var Tag = mio.createModel('tag').attr('id', { primary: true });
-      var Post = mio.createModel('post').attr('id', { primary: true });
-      Post.hasMany(Tag, {
-        as: 'tags',
-        foreignKey: 'post_id',
-        throughKey: 'tag_id'
-      });
-      Post.adapter.related = {has: function(relation, related, callback) {
-        callback(new Error("test"));
-      }};
-      var post = new Post({id: 1});
-      var tag = new Tag({id: 2 });
-      post.tags.has(tag, function(err, related) {
-        should.exist(err);
-        err.should.have.property('message', "test");
-        done();
-      });
-    });
-  });
-
-  describe('.remove()', function() {
-    it('removes related models', function(done) {
-      var User = mio.createModel('user').attr('id', { primary: true });
-      var Post = mio.createModel('post').attr('id', { primary: true }).attr('user_id');
-      User.hasMany(Post, {
-        as: 'posts',
-        foreignKey: 'user_id'
-      });
-      var user = new User({ id: 2 });
-      var post = new Post({ id: 1, user_id: 2 });
-      Post.adapter.save = User.adapter.save = function(changed, callback) {
-        callback();
-      };
-      user.posts.remove(post, function(err) {
-        should.not.exist(err);
-        post.should.have.property('user_id', null);
-        done();
-      });
-    });
-
-    it('removes related models by id', function(done) {
-      var User = mio.createModel('user').attr('id', { primary: true });
-      var Post = mio.createModel('post').attr('id', { primary: true }).attr('user_id');
-      User.hasMany(Post, {
-        as: 'posts',
-        foreignKey: 'user_id'
-      });
-      var user = new User({ id: 2 });
-      Post.adapter.find = function(query, cb) {
-        cb(null, { id: 1, user_id: 2 });
-      };
-      Post.adapter.save = function(changed, callback) {
-        callback();
-      };
-      user.posts.remove(1, function(err) {
-        should.not.exist(err);
-        done();
-      });
-    });
-
-    it("uses adapter's .remove() method if provided", function(done) {
-      var Tag = mio.createModel('tag').attr('id', { primary: true });
-      var Post = mio.createModel('post').attr('id', { primary: true });
-      Post.hasMany(Tag, {
-        as: 'tags',
-        foreignKey: 'post_id',
-        throughKey: 'tag_id'
-      });
-      var post = new Post({id: 1});
-      var tag1 = new Tag({id: 2 });
-      var tag2 = new Tag({id: 3 });
-      Post.adapter.related = {remove: function(relation, related, callback) {
-        should.exist(related);
-        related.should.be.instanceOf(Array);
-        related[0].id.should.equal(2);
-        related[1].id.should.equal(3);
-        callback();
-      }};
-      post.tags.remove(tag1, tag2, function(err) {
-        should.not.exist(err);
-        done();
-      });
-    });
-
-    it('passes error to callback', function(done) {
-      var Tag = mio.createModel('tag').attr('id', { primary: true });
-      var Post = mio.createModel('post').attr('id', { primary: true });
-      Post.hasMany(Tag, {
-        as: 'tags',
-        foreignKey: 'post_id',
-        throughKey: 'tag_id'
-      });
-      var post = new Post({id: 1});
-      var tag1 = new Tag({id: 2 });
-      var tag2 = new Tag({id: 3 });
-      Post.adapter.related = { remove: function(relation, related, callback) {
-        callback(new Error("test"));
-      }};
-      post.tags.remove(tag1, tag2, function(err) {
-        should.exist(err);
-        err.should.have.property('message', 'test');
-        done();
-      });
     });
   });
 });
