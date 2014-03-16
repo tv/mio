@@ -27,6 +27,7 @@
   },
   "main": "./lib/mio.js",
   "scripts": {
+    "coverage": "./node_modules/jscoverage/bin/jscoverage lib lib-cov && JSCOV=1 ./node_modules/mocha/bin/mocha test --recursive --reporter html-cov > coverage.html",
     "test": "./node_modules/mocha/bin/mocha test --recursive --reporter spec"
   },
   "license": "MIT"
