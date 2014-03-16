@@ -66,15 +66,11 @@ var user = new User({ name: 'alex' });
 * [Wiki](https://github.com/alexmingoia/mio/wiki/)
 * ##mio on irc.freenode.net
 
-## API
+## Models
 
 ### mio.createModel(name)
 
 Create new model constructor with given `name`.
-
-### mio.validators
-
-Exported array of validators shipped with mio.
 
 ### Model.attr(name[, options])
 
@@ -82,8 +78,6 @@ Define an attribute with given `name` and `options`.
 
 ```javascript
 User.attr('created_at', {
-  type: 'date',
-  required: true,
   default: function() {
     return new Date();
   }
@@ -130,14 +124,14 @@ console.log(User.type);
 // => "User"
 ```
 
-### Model.adapter
+### Model.stores
 
-Storage adapter plugin.
+Array of storage plugins for persistening models. See [Stores][4].
 
 ### Model.validators
 
 Array of validator functions. Validation plugins should add their validator
-function(s) here.
+function(s) here. See [Validators][5].
 
 ### Model.options
 
@@ -232,70 +226,75 @@ A mutable object for saving extra information pertaining to the model instance.
 
 #### Model events
 
-##### initializing
-
-Receives arguments `model` and `attributes`.
-
-##### initialized
-
-Receives argument `model`.
-
-##### setting
-
-Receives arguments `model` and `attributes`.
-
-##### change
-
-Receives arguments `model`, `name`, `value`, and `prev`.
-
-##### change:[attr]
-
-Receives arguments `model`, `value`, and `prev`.
-
-##### attribute
-
-Receives arguments `name` and `params`.
-
-##### before save
-
-##### after save
-
-##### before remove
-
-##### after remove
-
-##### error
-
-Receives arguments `model` and `error`.
+`after remove`  
+`after save`  
+`attribute`     Receives arguments `name` and `params`.  
+`before remove`  
+`before save`  
+`change`        Receives arguments `model`, `name`, `value`, and `prev`.  
+`change:[attr]` Receives arguments `model`, `value`, and `prev`.  
+`initializing`  Receives arguments `model` and `attributes`.  
+`initialized`   Receives argument `model`.  
+`setting`       Receives arguments `model` and `attributes`.  
+`error`         Receives arguments `model` and `error`.  
 
 #### Instance events
 
-##### setting
+`after remove`  
+`after save`  
+`before remove`  
+`before save`  
+`change`        Receives arguments `name`, `value`, and `prev`.  
+`change:[attr]` Receives arguments `value`, and `prev`.  
+ `error`        Receives argument `error`.  
+ `setting`      Receives argument `attributes`.  
 
-Receives argument `attributes`.
+## Plugins
 
-##### change
+Plugins are any function registered using `Model.use()`, `Model.browser()`, or `Model.server()`. Functions are invoked with the Model as both context and argument.
 
-Receives arguments `name`, `value`, and `prev`.
+```javascript
+User.use(function() {
+  this.prototype.customModelMethod = function() {
+    // ...
+  };
+});
+```
 
-##### change:[attr]
+There are two special types of plugins, known as stores and validators:
 
-Receives arguments `value`, and `prev`.
+### Stores
 
-##### before save
+Stores are plugins that persist models to storage layer(s).
 
-##### after save
+A store exposes methods corresponding to `Model.find()`, `Model.findAll()`,
+`Model.count()`, `Model.removeAll()`, `Model#save()`, and `Model#remove()`.
 
-##### before remove
+If querying for model(s), each store method is called until the model is found.
+Conversely, for save and remove methods each store method is called unless an
+error occurs.
 
-##### after remove
+See [mio-mysql][3] for an example of implementing a storage plugin.
 
-##### error
+### Validators
 
-Receives argument `error`.
+Validators are functions added to `Model.validators` array and called with the model instance as arguments. If a validation fails `Model#error()` is called, which adds to the `Model#errors` array. `Model#isValid()`, `Model#validate()`, and `Model#save()` all return the boolean representation of `Model#errors.length`.
+
+```javascript
+User.use(function() {
+  this.validators.push(function(user) {
+    if (typeof user.name !== 'string' || !user.name.length) {
+      user.error("Username is required.");
+    }
+  });
+});
+```
 
 ## MIT Licensed
 
 [0]: https://npmjs.org/
 [1]: https://github.com/component/component/
 [2]: http://bower.io/
+[3]: https://github.com/alexmingoia/mio-mysql/
+[4]: #stores
+[5]: #validators
