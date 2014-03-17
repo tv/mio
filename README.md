@@ -8,6 +8,7 @@
 
 Modern idiomatic models for the browser and node.js.
 
+* Promises and co/generator support
 * Restrict enumerable properties to defined model attributes.
 * Events emitted for initialization, attribute changes, errors, etc.
 * Attribute validators and defaults.
@@ -68,9 +69,18 @@ var user = new User({ name: 'alex' });
 
 ## Models
 
-### mio.createModel(name)
+### mio.createModel(name[, options])
 
-Create new model constructor with given `name`.
+Create new model constructor with given `name` and `options`.
+
+Options:
+
+* `thunks`
+  Wraps methods to return thunks.
+  Defaults to `true` if require can resolve [co][6].
+* `promises`
+  Wraps methods to return promises.
+  Defaults to `true` if require can resolve [when][7].
 
 ### Model.attr(name[, options])
 
@@ -298,3 +308,5 @@ User.use(function() {
 [3]: https://github.com/alexmingoia/mio-mysql/
 [4]: #stores
 [5]: #validators
+[6]: https://github.com/visionmedia/co/
+[7]: https://github.com/cujojs/when/

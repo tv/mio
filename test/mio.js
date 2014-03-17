@@ -110,6 +110,21 @@ describe('Model', function() {
     });
   });
 
+  it('wraps callback methods to return promises', function(done) {
+    var User = mio.createModel('User').attr('id');
+
+    User.stores.push({
+      findAll: function(query, cb) {
+        cb(null, new User({id: 1}));
+      }
+    });
+
+    User.findAll(1).then(function(user) {
+      expect(user).to.eql({id: 1});
+      done();
+    });
+  });
+
   describe('.primary', function() {
     var Model = mio.createModel('user').attr('id');
 
