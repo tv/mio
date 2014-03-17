@@ -48,11 +48,8 @@ User
   .attr('id', {
     primary: true
   })
-  .attr('name', {
-    required: true
-  })
+  .attr('name')
   .attr('created_at', {
-    required: true,
     default: function() {
       return new Date();
     }

@@ -14,7 +14,7 @@
     "sync",
     "store"
   ],
-  "main": "./lib/mio.js",
+  "main": "./lib/model.js",
   "dependencies": {
     "emitter": "component/emitter",
     "is-browser": "ForbesLindesay/is-browser#master"

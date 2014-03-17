@@ -1,4 +1,4 @@
-var mio = process.env.JSCOV ? require('../lib-cov/mio') : require('../lib/mio');
+var mio = process.env.JSCOV ? require('../lib-cov/model') : require('../lib/model');
 var expect = require('expect.js');
 var should = require('should');
 
@@ -656,7 +656,14 @@ describe('Model', function() {
   describe('#save()', function() {
     it('validates before saving', function(done) {
       var Model = mio.createModel('user')
-        .attr('id', { primary: true, required: true });
+        .attr('id', { primary: true, required: true })
+        .use(function() {
+          this.validators.push(function(model) {
+            if (!model.id) {
+              model.error("Validations failed.");
+            }
+          });
+        });
       var model = Model.create();
       model.save(function(err) {
         should.exist(err);

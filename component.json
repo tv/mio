@@ -15,12 +15,9 @@
     "component/emitter": "*",
     "ForbesLindesay/is-browser": "*"
   },
-  "main": "./lib/mio.js",
+  "main": "./lib/model.js",
   "scripts": [
-    "lib/mio.js",
-    "lib/model.js",
-    "lib/validators.js",
-    "lib/utils.js"
+    "lib/model.js"
   ],
   "license": "MIT"
 }
