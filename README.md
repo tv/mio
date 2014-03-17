@@ -172,16 +172,6 @@ User.count(function(err, count) {
 });
 ```
 
-### Model.removeAll(query, callback)
-
-```javascript
-User.removeAll({
-  created: '2013-11-01'
-}, function(err) {
-  // ...
-});
-```
-
 ### Model#save(callback)
 
 ```javascript
