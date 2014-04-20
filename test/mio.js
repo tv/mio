@@ -111,12 +111,14 @@ describe('Model', function() {
   });
 
   it('wraps callback methods to return promises', function(done) {
-    var User = mio.createModel('User').attr('id');
-
-    User.stores.push({
-      findAll: function(query, cb) {
-        cb(null, new User({id: 1}));
+    var User = mio.createModel('User', {
+      promisify: function(fn) {
+        return require('promise').denodeify(fn);
       }
+    }).attr('id');
+
+    User.findAll.fn.push(function(query, cb) {
+      cb(null, new User({id: 1}));
     });
 
     User.findAll(1).then(function(user) {
@@ -227,15 +229,14 @@ describe('Model', function() {
     it("calls each store's find method", function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
 
-      Model.stores.push({
-        find: function(query, cb) {
+      Model.find.fn.push(
+        function(query, cb) {
           cb();
-        }
-      }, {
-        find: function(query, cb) {
+        },
+        function(query, cb) {
           cb(null, new Model({ id: 1 }));
         }
-      });
+      );
 
       Model.find(1, function(err, model) {
         if (err) return done(err);
@@ -264,10 +265,8 @@ describe('Model', function() {
         done();
       });
 
-      Model.stores.push({
-        find: function(query, cb) {
-          cb(null, new Model({ id: 1 }));
-        }
+      Model.find.fn.push(function(query, cb) {
+        cb(null, new Model({ id: 1 }));
       });
 
       Model.find(1, function(err, model) {
@@ -278,10 +277,8 @@ describe('Model', function() {
     it('passes error from adapter to callback', function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
 
-      Model.stores.push({
-        find: function(query, cb) {
-          cb(new Error('test'));
-        }
+      Model.find.fn.push(function(query, cb) {
+        cb(new Error('test'));
       });
 
       Model.find(1, function(err, model) {
@@ -307,15 +304,14 @@ describe('Model', function() {
     it("calls each store's findAll method", function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
 
-      Model.stores.push({
-        findAll: function(query, cb) {
+      Model.findAll.fn.push(
+        function(query, cb) {
           cb();
-        }
-      }, {
-        findAll: function(query, cb) {
-          cb(null, [new Model({ id: 1 })]);
         },
-      });
+        function(query, cb) {
+          cb(null, [new Model({ id: 1 })]);
+        }
+      );
 
       Model.findAll(function(err, collection) {
         if (err) return done(err);
@@ -351,10 +347,8 @@ describe('Model', function() {
     it('passes error from adapter to callback', function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
 
-      Model.stores.push({
-        findAll: function(query, cb) {
-          cb(new Error('test'));
-        }
+      Model.findAll.fn.push(function(query, cb) {
+        cb(new Error('test'));
       });
 
       Model.findAll(function(err, collection) {
@@ -380,15 +374,14 @@ describe('Model', function() {
     it("calls each store's count method", function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
 
-      Model.stores.push({
-        count: function(query, cb) {
+      Model.count.fn.push(
+        function(query, cb) {
           cb();
-        }
-      }, {
-        count: function(query, cb) {
+        },
+        function(query, cb) {
           cb(null, 3);
         }
-      });
+      );
 
       Model.count(function(err, count) {
         if (err) return done(err);
@@ -423,15 +416,14 @@ describe('Model', function() {
     it('passes error from adapter to callback', function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
 
-      Model.stores.push({
-        count: function(query, cb) {
+      Model.count.fn.push(
+        function(query, cb) {
           cb();
-        }
-      }, {
-        count: function(query, cb) {
+        },
+        function(query, cb) {
           cb(new Error('test'));
         }
-      });
+      );
 
       Model.count(function(err, collection) {
         should.exist(err);
@@ -495,67 +487,6 @@ describe('Model', function() {
     });
   });
 
-  describe('#validate()', function() {
-    it('runs Model.validators functions', function(done) {
-      var validated = false;
-      var Model = mio.createModel('user')
-        .attr('id', { primary: true })
-        .use(function() {
-          this.validators.push(function() {
-            validated = true;
-          });
-        });
-      var model = Model.create({ id: 1 });
-      model.validate();
-      validated.should.equal(true);
-      done();
-    });
-
-    it('returns boolean', function(done) {
-      var Model = mio.createModel('user').attr('id', { primary: true });
-      var model = Model.create({ id: 1 });
-      var valid = model.validate();
-      should(valid).equal(true);
-      Model.validators.push(function(model) {
-        model.error('failed');
-      });
-      model.validate().should.equal(false);
-      done();
-    });
-
-    it('validates type', function(done) {
-      var Model = mio.createModel('user').attr('id', {
-        type: 'number',
-        primary: true
-      })
-      .attr('function', { type: 'function' })
-      .attr('date', { type: 'date' })
-      .attr('regexp', { type: 'regexp' })
-      .attr('array', { type: 'array' });
-      var model = Model.create({
-        id: 1,
-        function: function() {},
-        date: new Date(),
-        regexp: new RegExp(),
-        array: []
-      });
-      model.validate();
-      done();
-    });
-  });
-
-  describe('#isValid()', function() {
-    it('returns whether model is valid', function() {
-      var Model = mio.createModel('user')
-        .attr('id', { primary: true })
-        .use(function() {
-          this.validators.push(function() {});
-        });
-      var model = Model.create({ id: 1 });
-      model.isValid().should.equal(true);
-    });
-  });
-
   describe('#isDirty()', function() {
     it('returns whether model is changed/dirty', function() {
       var Model = mio.createModel('user').attr('id', { primary: true });
@@ -578,39 +509,20 @@ describe('Model', function() {
   });
 
   describe('#save()', function() {
-    it('validates before saving', function(done) {
-      var Model = mio.createModel('user')
-        .attr('id', { primary: true, required: true })
-        .use(function() {
-          this.validators.push(function(model) {
-            if (!model.id) {
-              model.error("Validations failed.");
-            }
-          });
-        });
-      var model = Model.create();
-      model.save(function(err) {
-        should.exist(err);
-        err.should.have.property('message', "Validations failed.");
-        done();
-      });
-    });
-
     it("calls each store's save method", function(done) {
       var Model = mio.createModel('user')
         .attr('id', { primary: true, required: true })
         .use(function() {
-          this.stores.push({
-            save: function(changed, cb) {
+          this.prototype.save.fn.push(
+            function(changed, cb) {
+              should(changed).have.property('id', 1);
+              cb();
+            },
+            function(changed, cb) {
               should(changed).have.property('id', 1);
               cb();
             }
-          }, {
-            save: function(changed, cb) {
-              should(changed).have.property('id', 1);
-              cb();
-            }
-          });
+          );
         });
 
       var model = Model.create({ id: 1 });
@@ -626,10 +538,8 @@ describe('Model', function() {
       var Model = mio.createModel('user')
         .attr('id', { primary: true })
         .use(function() {
-          this.stores.push({
-            save: function(changed, cb) {
-              cb(new Error("test"));
-            }
+          this.prototype.save.fn.push(function(changed, cb) {
+            cb(new Error("test"));
           });
         });
 
@@ -670,11 +580,9 @@ describe('Model', function() {
     it('executes callback immediately if not changed', function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
 
-      Model.stores.push({
-        save: function(changed, cb) {
-          should.not.exist(changed);
-          should.not.exist(cb);
-        }
+      Model.prototype.save.fn.push(function(changed, cb) {
+        should.not.exist(changed);
+        should.not.exist(cb);
       });
 
       var model = Model.create({ id: 1 });
@@ -689,15 +597,14 @@ describe('Model', function() {
       var Model = mio.createModel('user')
         .attr('id', { primary: true, required: true })
         .use(function() {
-          this.stores.push({
-            remove: function(cb) {
+          this.prototype.remove.fn.push(
+            function(cb) {
+              cb();
+            },
+            function(cb) {
               cb();
             }
-          }, {
-            remove: function(cb) {
-              cb();
-            }
-          });
+          );
         });
       var model = Model.create({ id: 1 });
       model.remove(function(err) {
@@ -711,10 +618,8 @@ describe('Model', function() {
       var Model = mio.createModel('user')
         .attr('id', { primary: true, required: true })
         .use(function() {
-          this.stores.push({
-            remove: function(cb) {
-              cb(new Error('test'));
-            }
+          this.prototype.remove.fn.push(function(cb) {
+            cb(new Error('test'));
           });
         });
       var model = Model.create({ id: 1 });
@@ -746,30 +651,6 @@ describe('Model', function() {
       model.on('after remove', function() {
         done();
       }).remove(function(err) { });
-    });
-  });
-
-  describe('#error()', function() {
-    it('adds error to model.errors array', function() {
-      var Model = mio.createModel('user').attr('id', { primary: true });
-      var model = Model.create({ id: 1 });
-      var error = model.error('test');
-      model.errors.length.should.equal(1);
-      model.errors[0].should.equal(error);
-    });
-
-    it('emits "error" event', function(done) {
-      var Model = mio.createModel('user')
-        .attr('id', { primary: true })
-        .on('error', function(m, error) {
-          should.exist(m);
-          m.should.equal(model);
-          should.exist(error);
-          error.should.have.property('message', 'test');
-          done();
-        });
-      var model = Model.create({ id: 1 });
-      model.error('test');
     });
   });
 });

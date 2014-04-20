@@ -8,7 +8,7 @@
 
 Modern idiomatic models for the browser and node.js.
 
-* Promises and co/generator support
+* Promise and co/generator support
 * Restrict enumerable properties to defined model attributes.
 * Events emitted for initialization, attribute changes, errors, etc.
 * Attribute validators and defaults.
@@ -37,12 +37,10 @@ Using [bower][2]:
 bower install mio
 ```
 
-## Usage
+## Example
 
 ```javascript
-var mio = require('mio');
-
-var User = mio.createModel('user');
+var User = require('mio').createModel('user');
 
 User
   .attr('id', {
@@ -64,7 +62,7 @@ var user = new User({ name: 'alex' });
 * [Wiki](https://github.com/alexmingoia/mio/wiki/)
 * ##mio on irc.freenode.net
 
-## Models
+## API
 
 ### mio.createModel(name[, options])
 
@@ -72,12 +70,22 @@ Create new model constructor with given `name` and `options`.
 
 Options:
 
-* `thunks`
-  Wraps methods to return thunks.
-  Defaults to `true` if require can resolve [co][6].
-* `promises`
-  Wraps methods to return promises.
-  Defaults to `true` if require can resolve [when][7].
+* `thunks` If true, wraps methods to return thunks for
+  use with visionmedia/co (default:false).
+* `promises` Use function to wrap methods to return promises (default: false).
+
+```javascript
+var User = require('mio').createModel('user');
+```
+
+With promises using [then/promise](https://github.com/then/promise):
+
+```javascript
+Var User = require('mio').createModel('user', {
+  promisify: function(fn) {
+    return require('promise).denodeify(fn);
+  }
+});
 
 ### Model.attr(name[, options])
 
@@ -131,15 +139,6 @@ console.log(User.type);
 // => "User"
 ```
 
-### Model.stores
-
-Array of storage plugins for persistening models. See [Stores][4].
-
-### Model.validators
-
-Array of validator functions. Validation plugins should add their validator
-function(s) here. See [Validators][5].
-
 ### Model.options
 
 Plugins should use this object to store options.
@@ -192,11 +191,6 @@ user.remove(function(err) {
 
 ### Model#isNew()
 
-### Model#validate()
-### Model#isValid()
-
-Runs validators and returns a boolean of whether the model has errors.
-
 ### Model#isDirty()
 
 Whether the model has attributes that have changed since last sav.
@@ -207,17 +201,91 @@ Return attributes changed since last save.
 
 ### Model#has(attribute)
 
-### Model#error(message, extend)
-
-Create error, add to `model.errors` array, and emit "error" event.
-
-### Model#errors
-
-Array of validation or other errors the model has encountered.
-
 ### Model#extras
 
 A mutable object for saving extra information pertaining to the model instance.
+
+### Hooks
+
+Hooks are asynchronous function(s) run before or after other model methods.
+
+```javascript
+User.before('save', function(model, next) {
+  if (typeof model.name !== 'string' || model.name.length < 2) {
+    return next(new Error("Name must be longer than 1 character."));
+  }
+  next();
+});
+
+var user = new User({ name: 'A' });
+
+user.save(function(err) {
+  console.log(err.message);
+  // => "Name must be longer than 1 character."
+});
+```
+
+Hooks are run in series in the order they have been declared. They receive the
+same arguments as the method your are hooking.
+
+If a hook passes an error to its
+callback, subsequent hooks are not executed and the hooked method's callback is
+invoked with the error.
+
+#### Model.before(method, fn)
+
+Call `fn` before `method` is executed. See [Hooks](#hooks).
+
+Valid methods to hook are `find`, `findAll`, `count`, `save`, and `remove`.
+
+#### Model.after(method, fn)
+
+Call `fn` after `method` is executed. See [Hooks](#hooks).
+
+Valid methods to hook are `find`, `findAll`, `count`, `save`, and `remove`.
+
+### Plugins
+
+Plugins are any function registered using `Model.use()`, `Model.browser()`, or `Model.server()`.
+Functions are invoked with the Model as both context and argument.
+
+```javascript
+User.use(function() {
+  this.prototype.customModelMethod = function() {
+    // ...
+  };
+});
+```
+
+### Stores
+
+Stores are plugins that persist models to storage layer(s).
+
+If querying for model(s), each store method is called until the model is found.
+Conversely, for save and remove methods each store method is called unless an
+error occurs.
+
+See [mio-mysql][3] for an example of implementing a storage plugin.
+
+#### Model.find.use(fn)
+
+Use `fn` to find model.
+
+#### Model.findAll.use(fn)
+
+Use `fn` to find collection of models.
+
+#### Model.count.use(fn)
+
+Use `fn` to return count of model.
+
+#### Model.save.use(fn)
+
+Use `fn` to persist model in storage.
+
+#### Model.remove.use(fn)
+
+Use `fn` to remove model from storage.
 
 ### Events
 
@@ -243,49 +311,8 @@ A mutable object for saving extra information pertaining to the model instance.
 `before save`  
 `change`        Receives arguments `name`, `value`, and `prev`.  
 `change:[attr]` Receives arguments `value`, and `prev`.  
- `error`        Receives argument `error`.  
- `setting`      Receives argument `attributes`.  
-
-## Plugins
-
-Plugins are any function registered using `Model.use()`, `Model.browser()`, or `Model.server()`. Functions are invoked with the Model as both context and argument.
-
-```javascript
-User.use(function() {
-  this.prototype.customModelMethod = function() {
-    // ...
-  };
-});
-```
-
-There are two special types of plugins, known as stores and validators:
-
-### Stores
-
-Stores are plugins that persist models to storage layer(s).
-
-A store exposes methods corresponding to `Model.find()`, `Model.findAll()`,
-`Model.count()`, `Model.removeAll()`, `Model#save()`, and `Model#remove()`.
-
-If querying for model(s), each store method is called until the model is found.
-Conversely, for save and remove methods each store method is called unless an
-error occurs.
-
-See [mio-mysql][3] for an example of implementing a storage plugin.
-
-### Validators
-
-Validators are functions added to `Model.validators` array and called with the model instance as arguments. If a validation fails `Model#error()` is called, which adds to the `Model#errors` array. `Model#isValid()`, `Model#validate()`, and `Model#save()` all return the boolean representation of `Model#errors.length`.
-
-```javascript
-User.use(function() {
-  this.validators.push(function(user) {
-    if (typeof user.name !== 'string' || !user.name.length) {
-      user.error("Username is required.");
-    }
-  });
-});
-```
+`error`        Receives argument `error`.  
+`setting`      Receives argument `attributes`.  
 
 ## MIT Licensed
 
@@ -294,6 +321,5 @@ User.use(function() {
 [2]: http://bower.io/
 [3]: https://github.com/alexmingoia/mio-mysql/
 [4]: #stores
-[5]: #validators
-[6]: https://github.com/visionmedia/co/
-[7]: https://github.com/cujojs/when/
+[5]: https://github.com/visionmedia/co/
+[6]: https://github.com/cujojs/when/

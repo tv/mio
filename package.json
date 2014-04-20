@@ -24,7 +24,7 @@
     "coveralls": "^2.6.1",
     "mocha-lcov-reporter": "0.0.1",
     "jscoverage": "~0.3.8",
-    "when": "^2.8.0"
+    "promise": "^4.0.0"
   },
   "main": "./lib/model.js",
   "scripts": {
