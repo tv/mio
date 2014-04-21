@@ -117,7 +117,7 @@ describe('Model', function() {
       }
     }).attr('id');
 
-    User.findAll.fn.push(function(query, cb) {
+    User.use('findAll', function(query, cb) {
       cb(null, new User({id: 1}));
     });
 
@@ -229,14 +229,13 @@ describe('Model', function() {
     it("calls each store's find method", function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
 
-      Model.find.fn.push(
-        function(query, cb) {
+      Model
+        .use('find', function(query, cb) {
           cb();
-        },
-        function(query, cb) {
+        })
+        .use('find', function(query, cb) {
           cb(null, new Model({ id: 1 }));
-        }
-      );
+        });
 
       Model.find(1, function(err, model) {
         if (err) return done(err);
@@ -265,7 +264,7 @@ describe('Model', function() {
         done();
       });
 
-      Model.find.fn.push(function(query, cb) {
+      Model.use('find', function(query, cb) {
         cb(null, new Model({ id: 1 }));
       });
 
@@ -277,7 +276,7 @@ describe('Model', function() {
     it('passes error from adapter to callback', function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
 
-      Model.find.fn.push(function(query, cb) {
+      Model.use('find', function(query, cb) {
         cb(new Error('test'));
       });
 
@@ -304,14 +303,13 @@ describe('Model', function() {
     it("calls each store's findAll method", function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
 
-      Model.findAll.fn.push(
-        function(query, cb) {
+      Model
+        .use('findAll', function(query, cb) {
           cb();
-        },
-        function(query, cb) {
+        })
+        .use('findAll', function(query, cb) {
           cb(null, [new Model({ id: 1 })]);
-        }
-      );
+        });
 
       Model.findAll(function(err, collection) {
         if (err) return done(err);
@@ -347,7 +345,7 @@ describe('Model', function() {
     it('passes error from adapter to callback', function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
 
-      Model.findAll.fn.push(function(query, cb) {
+      Model.use('findAll', function(query, cb) {
         cb(new Error('test'));
       });
 
@@ -374,14 +372,13 @@ describe('Model', function() {
     it("calls each store's count method", function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
 
-      Model.count.fn.push(
-        function(query, cb) {
+      Model
+        .use('count', function(query, cb) {
           cb();
-        },
-        function(query, cb) {
+        })
+        .use('count', function(query, cb) {
           cb(null, 3);
-        }
-      );
+        });
 
       Model.count(function(err, count) {
         if (err) return done(err);
@@ -416,14 +413,13 @@ describe('Model', function() {
     it('passes error from adapter to callback', function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
 
-      Model.count.fn.push(
-        function(query, cb) {
+      Model
+        .use('count', function(query, cb) {
           cb();
-        },
-        function(query, cb) {
+        })
+        .use('count', function(query, cb) {
           cb(new Error('test'));
-        }
-      );
+        });
 
       Model.count(function(err, collection) {
         should.exist(err);
@@ -512,17 +508,13 @@ describe('Model', function() {
     it("calls each store's save method", function(done) {
       var Model = mio.createModel('user')
         .attr('id', { primary: true, required: true })
-        .use(function() {
-          this.prototype.save.fn.push(
-            function(changed, cb) {
-              should(changed).have.property('id', 1);
-              cb();
-            },
-            function(changed, cb) {
-              should(changed).have.property('id', 1);
-              cb();
-            }
-          );
+        .use('save', function(changed, cb) {
+          should(changed).have.property('id', 1);
+          cb();
+        })
+        .use('save', function(changed, cb) {
+          should(changed).have.property('id', 1);
+          cb();
         });
 
       var model = Model.create({ id: 1 });
@@ -537,10 +529,8 @@ describe('Model', function() {
     it("passes error from adapter to callback", function(done) {
       var Model = mio.createModel('user')
         .attr('id', { primary: true })
-        .use(function() {
-          this.prototype.save.fn.push(function(changed, cb) {
-            cb(new Error("test"));
-          });
+        .use('save', function(changed, cb) {
+          cb(new Error("test"));
         });
 
       var model = Model.create();
@@ -580,7 +570,7 @@ describe('Model', function() {
     it('executes callback immediately if not changed', function(done) {
       var Model = mio.createModel('user').attr('id', { primary: true });
 
-      Model.prototype.save.fn.push(function(changed, cb) {
+      Model.use('save', function(changed, cb) {
         should.not.exist(changed);
         should.not.exist(cb);
       });
@@ -596,15 +586,11 @@ describe('Model', function() {
     it("calls each store's remove method", function(done) {
       var Model = mio.createModel('user')
         .attr('id', { primary: true, required: true })
-        .use(function() {
-          this.prototype.remove.fn.push(
-            function(cb) {
-              cb();
-            },
-            function(cb) {
-              cb();
-            }
-          );
+        .use('remove', function(cb) {
+          cb();
+        })
+        .use('remove', function(cb) {
+          cb();
         });
       var model = Model.create({ id: 1 });
       model.remove(function(err) {
@@ -617,10 +603,8 @@ describe('Model', function() {
     it("passes error from adapter to callback", function(done) {
       var Model = mio.createModel('user')
         .attr('id', { primary: true, required: true })
-        .use(function() {
-          this.prototype.remove.fn.push(function(cb) {
-            cb(new Error('test'));
-          });
+        .use('remove', function(cb) {
+          cb(new Error('test'));
         });
       var model = Model.create({ id: 1 });
       model.remove(function(err) {

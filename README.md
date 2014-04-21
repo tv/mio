@@ -22,19 +22,13 @@ Modern idiomatic models for the browser and node.js.
 Using [npm][0]:
 
 ```sh
-npm install mio
-```
-
-Using [component][1]:
-
-```sh
-component install alexmingoia/mio
+npm install --save mio
 ```
 
 Using [bower][2]:
 
 ```sh
-bower install mio
+bower install --save mio
 ```
 
 ## Example
@@ -60,7 +54,7 @@ var user = new User({ name: 'alex' });
 
 * [Plugins](https://github.com/alexmingoia/mio/wiki/Plugins/)
 * [Wiki](https://github.com/alexmingoia/mio/wiki/)
-* ##mio on irc.freenode.net
+* `##mio` on irc.freenode.net
 
 ## API
 
@@ -70,9 +64,9 @@ Create new model constructor with given `name` and `options`.
 
 Options:
 
-* `thunks` If true, wraps methods to return thunks for
+- `thunks` If true, wraps methods to return thunks for
   use with visionmedia/co (default:false).
-* `promises` Use function to wrap methods to return promises (default: false).
+- `promises` Use function to wrap methods to return promises (default: false).
 
 ```javascript
 var User = require('mio').createModel('user');
@@ -86,6 +80,7 @@ Var User = require('mio').createModel('user', {
     return require('promise).denodeify(fn);
   }
 });
+```
 
 ### Model.attr(name[, options])
 
@@ -101,10 +96,10 @@ User.attr('created_at', {
 
 #### options
 
-`default` default value or function returning value.
-`filtered` if true prevents attribute from being enumerated
-`get` getter function returning attribute value
-`primary` use this attribute as primary key/id (must be unique)
+- `default` default value or function returning value.
+- `filtered` if true prevents attribute from being enumerated
+- `get` getter function returning attribute value
+- `primary` use this attribute as primary key/id (must be unique)
 
 ### Model.use(fn)
 
@@ -205,45 +200,6 @@ Return attributes changed since last save.
 
 A mutable object for saving extra information pertaining to the model instance.
 
-### Hooks
-
-Hooks are asynchronous function(s) run before or after other model methods.
-
-```javascript
-User.before('save', function(model, next) {
-  if (typeof model.name !== 'string' || model.name.length < 2) {
-    return next(new Error("Name must be longer than 1 character."));
-  }
-  next();
-});
-
-var user = new User({ name: 'A' });
-
-user.save(function(err) {
-  console.log(err.message);
-  // => "Name must be longer than 1 character."
-});
-```
-
-Hooks are run in series in the order they have been declared. They receive the
-same arguments as the method your are hooking.
-
-If a hook passes an error to its
-callback, subsequent hooks are not executed and the hooked method's callback is
-invoked with the error.
-
-#### Model.before(method, fn)
-
-Call `fn` before `method` is executed. See [Hooks](#hooks).
-
-Valid methods to hook are `find`, `findAll`, `count`, `save`, and `remove`.
-
-#### Model.after(method, fn)
-
-Call `fn` after `method` is executed. See [Hooks](#hooks).
-
-Valid methods to hook are `find`, `findAll`, `count`, `save`, and `remove`.
-
 ### Plugins
 
 Plugins are any function registered using `Model.use()`, `Model.browser()`, or `Model.server()`.
@@ -265,27 +221,13 @@ If querying for model(s), each store method is called until the model is found.
 Conversely, for save and remove methods each store method is called unless an
 error occurs.
 
-See [mio-mysql][3] for an example of implementing a storage plugin.
+See [mio-ajax][1] and [mio-mysql][3] for examples of implementing a storage plugin.
 
-#### Model.find.use(fn)
+#### Model.use(method, fn)
 
-Use `fn` to find model.
+Use store `fn` for given model `method`.
 
-#### Model.findAll.use(fn)
-
-Use `fn` to find collection of models.
-
-#### Model.count.use(fn)
-
-Use `fn` to return count of model.
-
-#### Model.save.use(fn)
-
-Use `fn` to persist model in storage.
-
-#### Model.remove.use(fn)
-
-Use `fn` to remove model from storage.
+Valid methods are `"findAll"`, `"find"`, `"count"`, `"save"`, and `"remove"`.
 
 ### Events
 
@@ -317,7 +259,7 @@ Use `fn` to remove model from storage.
 ## MIT Licensed
 
 [0]: https://npmjs.org/
-[1]: https://github.com/component/component/
+[1]: https://github.com/alexmingoia/mio-ajax/
 [2]: http://bower.io/
 [3]: https://github.com/alexmingoia/mio-mysql/
 [4]: #stores
