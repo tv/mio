@@ -11,7 +11,7 @@ gulp.task('coveralls', ['instrument'], function() {
   process.env.JSCOV=1;
 
   return spawn('node_modules/mocha/bin/mocha', [
-    'test', '--reporter', 'mocha-lcov-reporter'
+    'test', '--reporter', 'json-lcov'
   ])
   .stdout.pipe(coveralls());
 });
