@@ -19,17 +19,22 @@
     "is-browser": "~2.0.0"
   },
   "devDependencies": {
-    "mocha": "^1.14.0",
     "expect.js": "^0.3.1",
-    "coveralls": "^2.6.1",
+    "promise": "^4.0.0",
+    "gulp": "^3.6.1",
+    "should": "^3.3.1",
     "mocha-lcov-reporter": "0.0.1",
-    "jscoverage": "~0.3.8",
-    "promise": "^4.0.0"
+    "mocha": "^1.18.2",
+    "vinyl-source-stream": "^0.1.1",
+    "gulp-coveralls": "^0.1.2",
+    "gulp-clean": "^0.2.4"
   },
   "main": "./lib/model.js",
   "scripts": {
-    "coverage": "./node_modules/jscoverage/bin/jscoverage lib lib-cov && JSCOV=1 ./node_modules/mocha/bin/mocha test --recursive --reporter html-cov > coverage.html",
-    "test": "./node_modules/mocha/bin/mocha --recursive --reporter spec"
+    "coverage": "gulp coverage",
+    "prepublish": "gulp coveralls",
+    "test": "gulp test",
+    "clean": "gulp clean"
   },
   "license": "MIT"
 }
