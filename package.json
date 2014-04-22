@@ -4,7 +4,7 @@
   "version": "0.7.1",
   "repository": {
     "type": "git",
-    "url": "git://github.com/alexmingoia/mio.git"
+    "url": "git://github.com/mio/mio.git"
   },
   "keywords": [
     "model",

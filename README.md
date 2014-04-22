@@ -1,10 +1,10 @@
 # mio
 
-[![Build Status](https://secure.travis-ci.org/alexmingoia/mio.png)](http://travis-ci.org/alexmingoia/mio) 
-[![Coverage Status](https://coveralls.io/repos/alexmingoia/mio/badge.png?branch=master)](https://coveralls.io/r/alexmingoia/mio?branch=master)
+[![Build Status](https://secure.travis-ci.org/mio/mio.png)](http://travis-ci.org/mio/mio) 
+[![Coverage Status](https://coveralls.io/repos/mio/mio/badge.png?branch=master)](https://coveralls.io/r/mio/mio?branch=master)
 [![Bower version](https://badge.fury.io/bo/mio.png)](http://badge.fury.io/bo/mio)
 [![NPM version](https://badge.fury.io/js/mio.png)](http://badge.fury.io/js/mio)
-[![Dependency Status](https://david-dm.org/alexmingoia/mio.png)](http://david-dm.org/alexmingoia/mio)
+[![Dependency Status](https://david-dm.org/mio/mio.png)](http://david-dm.org/mio/mio)
 
 Modern idiomatic models for the browser and node.js.
 
@@ -52,8 +52,8 @@ var user = new User({ name: 'alex' });
 
 ## Community
 
-* [Plugins](https://github.com/alexmingoia/mio/wiki/Plugins/)
-* [Wiki](https://github.com/alexmingoia/mio/wiki/)
+* [Plugins](https://github.com/mio/mio/wiki/Plugins/)
+* [Wiki](https://github.com/mio/mio/wiki/)
 * `##mio` on irc.freenode.net
 
 ## API
@@ -259,9 +259,9 @@ Valid methods are `"findAll"`, `"find"`, `"count"`, `"save"`, and `"remove"`.
 ## MIT Licensed
 
 [0]: https://npmjs.org/
-[1]: https://github.com/alexmingoia/mio-ajax/
+[1]: https://github.com/mio/ajax/
 [2]: http://bower.io/
-[3]: https://github.com/alexmingoia/mio-mysql/
+[3]: https://github.com/mio/mysql/
 [4]: #stores
 [5]: https://github.com/visionmedia/co/
 [6]: https://github.com/cujojs/when/
