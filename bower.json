@@ -14,6 +14,12 @@
     "sync",
     "store"
   ],
+  "ignore": [
+    "coverage.html",
+    "node_modules",
+    "lib-cov",
+    "test"
+  ],
   "main": "./lib/model.js",
   "dependencies": {
     "emitter": "component/emitter",
