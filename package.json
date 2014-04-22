@@ -1,7 +1,7 @@
 {
   "name": "mio",
   "description": "Modern idiomatic models for the browser and node.js.",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "repository": {
     "type": "git",
     "url": "git://github.com/mio/mio.git"
@@ -31,10 +31,10 @@
   },
   "main": "./lib/model.js",
   "scripts": {
-    "coverage": "gulp coverage",
-    "prepublish": "gulp coveralls",
-    "test": "gulp test",
-    "clean": "gulp clean"
+    "coverage": "./node_modules/gulp/bin/gulp.js coverage",
+    "prepublish": "./node_modules/gulp/bin/gulp.js coveralls",
+    "test": "./node_modules/gulp/bin/gulp.js test",
+    "clean": "./node_modules/gulp/bin/gulp.js clean"
   },
   "license": "MIT"
 }
