@@ -1,6 +1,6 @@
 language: node_js
 node_js:
-  - 0.10
-  - 0.9
+  - "0.10"
+  - "0.9"
 
 secure: "GeJVlUGkikNt2lMTGJoAD6xHlC1Ez5keVC/TVdV+7rukgSVMDIzaZrRKCKXtYAzp+H81m7gdvZxSDiIQssuPNYx7pzYT3I+ij5A70miZc0EG0KfOBsUWtmAysa5iaeXeNkdj7Rm0etZ92sC38AAx65Sg8pFEx16yF8vJJWOiDtw="
