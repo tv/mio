@@ -182,6 +182,35 @@ describe('Model', function() {
       });
       Model.should.have.property('test', 1);
     });
+
+    it('should not link to other models, part 1', function (done) {
+      var User = mio.createModel('user');
+
+      User.use('find', function(query, callback) {
+          callback(null, {foo: 'bar'});
+      });
+
+      var Post = mio.createModel('post');
+
+      User.find({}, function (err, model) {
+          model.foo.should.equal('bar');
+          done();
+      });
+    });
+
+    it('should not link to other models, part 2', function (done) {
+      var User = mio.createModel('user');
+      var Post = mio.createModel('post');
+
+      User.use('find', function(query, callback) {
+          callback(null, {foo: 'bar'});
+      });
+
+      Post.find({}, function (err, model) {
+          model.foo.should.not.equal('bar');
+          done();
+      });
+    });
   });
 
   describe('.browser()', function() {
